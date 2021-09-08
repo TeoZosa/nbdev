@@ -23,9 +23,16 @@ def _add_new_defaults(cfg, file, **kwargs):
             save_config_file(file, cfg)
 
 @lru_cache(maxsize=None)
-def get_config(cfg_name='settings.ini'):
-    cfg_path = Path.cwd()
-    while cfg_path != cfg_path.parent and not (cfg_path/cfg_name).exists(): cfg_path = cfg_path.parent
+def get_config(cfg_name='pyproject.toml'):
+    def _recursively_search_for_cfg_path(_cfg_name):
+        _cfg_path = Path.cwd()
+        while _cfg_path != _cfg_path.parent and not (_cfg_path / _cfg_name).exists(): _cfg_path = _cfg_path.parent
+        return _cfg_path
+
+    cfg_path = _recursively_search_for_cfg_path(cfg_name)
+    if not (cfg_path/cfg_name).exists(): # Fallback to `settings.ini`
+        cfg_name = "settings.ini"
+        cfg_path = _recursively_search_for_cfg_path(cfg_name)
     config = Config(cfg_path, cfg_name=cfg_name)
     _add_new_defaults(config.d, config.config_file,
             host="github", doc_host="https://%(user)s.github.io", doc_baseurl="/%(lib_name)s/")
